@@ -4,16 +4,6 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -23,6 +13,7 @@
 /* USER CODE BEGIN Includes */
 #include "motor.h"
 #include "sensor.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +55,22 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// 霍爾感測器中斷處理回呼函式
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    // 檢查是否由霍爾感測器 (PC5) 觸發中斷
+    if(GPIO_Pin == HALL_SENSOR_Pin)
+    {
+        // 點亮 PA5 上的 LED 燈 (偵測到磁場)
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
+        // 為了讓你用肉眼看到閃爍，加入短暫延遲
+        for(volatile int i = 0; i < 1000000; i++);
+
+        // 熄滅 LED 燈
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -100,51 +106,28 @@ int main(void)
   MX_TIM3_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  // 啟動控制馬達 PWM 的 Timer
+
+  // 啟動前三個控制馬達 PWM 的 Timer 通道
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
 
-  // 啟動超音波計時用的 Timer
-  HAL_TIM_Base_Start(&htim3);
+  // 啟動控制右後輪 PWM 的 TIM3 通道1
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+
+  // 啟動超音波計時用的 Timer (如果你之後還要用這行，請確保它不會跟 PWM 產生衝突)
+  // HAL_TIM_Base_Start(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      float dist = Read_Ultrasonic_Distance();
+      // 這裡目前保留空迴圈，專注測試霍爾感測器的中斷功能
+      // 之後若要加入馬達測試碼，可以放在這裡
 
-      // 1. 避障優先邏輯
-      if(dist > 0.1 && dist < AVOID_DIST) {
-          Car_Stop();
-          HAL_Delay(300);
-          Car_Strafe_Left(BASE_SPEED);
-          HAL_Delay(1000);
-          Car_Forward(BASE_SPEED);
-          HAL_Delay(1000);
-          continue; // 重新開始 while 迴圈
-      }
+      // 當霍爾感測器觸發時，程式會跳出迴圈去執行 HAL_GPIO_EXTI_Callback
 
-      // 2. 循跡控制邏輯
-      uint8_t line_status = Read_Track_Sensor();
-      switch(line_status) {
-          case 0x04:
-          case 0x0E: Car_Forward(BASE_SPEED); break;
-          case 0x08:
-          case 0x0C: Car_Turn_Left(TURN_SPEED); break;
-          case 0x10:
-          case 0x18: Car_Turn_Left(TURN_SPEED + 150); break;
-          case 0x02:
-          case 0x06: Car_Turn_Right(TURN_SPEED); break;
-          case 0x01:
-          case 0x03: Car_Turn_Right(TURN_SPEED + 150); break;
-          case 0x00: Car_Stop(); break;
-          default: Car_Forward(BASE_SPEED); break;
-      }
-
-      HAL_Delay(10); // 避免主迴圈跑太快，給感測器緩衝時間
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
