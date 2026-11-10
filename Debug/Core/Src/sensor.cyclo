@@ -1,0 +1,3 @@
+../Core/Src/sensor.c:27:6:Delay_us	2
+../Core/Src/sensor.c:33:9:Read_Track_Sensor	1
+../Core/Src/sensor.c:47:7:Read_Ultrasonic_Distance	3

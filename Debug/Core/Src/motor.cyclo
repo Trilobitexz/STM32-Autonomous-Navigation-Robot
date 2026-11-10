@@ -1,0 +1,7 @@
+../Core/Src/motor.c:21:6:Set_Motor	10
+../Core/Src/motor.c:49:6:Car_Forward	1
+../Core/Src/motor.c:54:6:Car_Stop	1
+../Core/Src/motor.c:59:6:Car_Turn_Left	1
+../Core/Src/motor.c:64:6:Car_Turn_Right	1
+../Core/Src/motor.c:69:6:Car_Strafe_Left	1
+../Core/Src/motor.c:74:6:Car_Strafe_Right	1
