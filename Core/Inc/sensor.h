@@ -3,10 +3,11 @@
 
 #include "main.h"
 
-// 宣告在 main.c 設定中初始化的 Timer (用於超音波微秒計時)
-extern TIM_HandleTypeDef htim3;
+// 如果之後你需要用 TIM3 來計算超音波回波時間，可以在此宣告
+// (注意：你目前將 TIM3_CH1 用作右後輪 PWM，若要計時需使用 TIM3 的其他通道或另一個 Timer)
+// extern TIM_HandleTypeDef htim3;
 
-// 感測器讀取函式
+// 感測器讀取函式 (未來若需啟用超音波與循跡)
 uint8_t Read_Track_Sensor(void);
 float Read_Ultrasonic_Distance(void);
 

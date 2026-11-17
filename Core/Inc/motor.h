@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-// 宣告在 main.c 中初始化的 TIM1 (統一負責 4 路 PWM)
+// 宣告在 main.c 中初始化的 TIM1 (統一負責 4 路 PWM 輸出給 L298N)
 extern TIM_HandleTypeDef htim1;
 
 // 基礎車體運動函式
