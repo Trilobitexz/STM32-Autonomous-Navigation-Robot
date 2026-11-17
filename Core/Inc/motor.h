@@ -1,10 +1,10 @@
 #ifndef MOTOR_H
 #define MOTOR_H
 
-#include "main.h" // 為了使用 HAL 庫與 GPIO 定義
+#include "main.h"
 
-// 宣告在 main.c 或 TIM 設定中初始化的 Timer
-extern TIM_HandleTypeDef htim2;
+// 宣告在 main.c 中初始化的 TIM1 (統一負責 4 路 PWM)
+extern TIM_HandleTypeDef htim1;
 
 // 基礎車體運動函式
 void Set_Motor(uint8_t motor_id, int8_t dir, uint16_t speed);
