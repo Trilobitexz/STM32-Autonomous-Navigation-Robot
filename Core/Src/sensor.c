@@ -20,11 +20,9 @@
 #define ECHO_Pin           GPIO_PIN_11
 /* ============================================== */
 
-// 建立微秒延遲函式
-// ⚠️ 警告：由於 htim3 目前已指派給右後輪作 PWM 輸出，若在此直接重置 Counter 會干擾馬達運轉。
-// 若未來要啟用超音波，請指派另一個獨立的 Timer (如 htim6) 來做 Delay_us
+// 微秒延遲輔助函式
 void Delay_us(uint16_t us) {
-    // 假設未來使用 htim6 計時
+    // 假設未來使用獨立 Timer (如 htim6) 計時
     // __HAL_TIM_SET_COUNTER(&htim6, 0);
     // while (__HAL_TIM_GET_COUNTER(&htim6) < us);
 }
@@ -33,19 +31,17 @@ void Delay_us(uint16_t us) {
 uint8_t Read_Track_Sensor(void) {
     uint8_t sensor_val = 0;
 
-    // 依序讀取最左(L2)到最右(R2)的感測器，並將結果推入 bitmask
     sensor_val |= (HAL_GPIO_ReadPin(Track_L2_GPIO_Port, Track_L2_Pin) << 4);
     sensor_val |= (HAL_GPIO_ReadPin(Track_L1_GPIO_Port, Track_L1_Pin) << 3);
     sensor_val |= (HAL_GPIO_ReadPin(Track_M_GPIO_Port, Track_M_Pin) << 2);
     sensor_val |= (HAL_GPIO_ReadPin(Track_R1_GPIO_Port, Track_R1_Pin) << 1);
     sensor_val |= (HAL_GPIO_ReadPin(Track_R2_GPIO_Port, Track_R2_Pin) << 0);
 
-    return sensor_val; // 例如回傳 0b00100 (0x04) 代表只有中間壓線
+    return sensor_val;
 }
 
 // 讀取 HC-SR04 超音波距離
 float Read_Ultrasonic_Distance(void) {
-    // ⚠️ 警告：目前 Timer 資源緊湊，此函式需配合獨立 Timer (如 htim6) 才能正常運作
     uint32_t local_time = 0;
     float distance = 0;
 
@@ -55,11 +51,12 @@ float Read_Ultrasonic_Distance(void) {
 
     while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET);
 
+    // 需配合硬體 Timer 才能準確計算時間
     // __HAL_TIM_SET_COUNTER(&htim6, 0);
     // while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_SET) {
     //     local_time = __HAL_TIM_GET_COUNTER(&htim6);
     // }
 
-    // 計算距離：距離(cm) = 時間(us) * 聲速(340m/s) / 2
     distance = local_time * 0.017;
     return distance;
+}

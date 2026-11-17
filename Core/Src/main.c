@@ -13,12 +13,10 @@
 /* USER CODE BEGIN Includes */
 #include "motor.h"
 #include "sensor.h"
-#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -30,20 +28,16 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim1; // 用於 4 路 PWM 控制馬達速度
-TIM_HandleTypeDef htim2; // 左前輪編碼器
-TIM_HandleTypeDef htim3; // 右後輪編碼器
-TIM_HandleTypeDef htim4; // 左後輪編碼器
-TIM_HandleTypeDef htim5; // 右前輪編碼器
-
-UART_HandleTypeDef huart2;
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -54,15 +48,11 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
-static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// 原本的單線 EXTI 霍爾感測器中斷已移除
-// 改用底下的 Timer 硬體 Encoder Mode 進行 4 輪同步讀取
 /* USER CODE END 0 */
 
 /**
@@ -71,26 +61,9 @@ static void MX_USART2_UART_Init(void);
   */
 int main(void)
 {
-
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
   /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -99,38 +72,33 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
-  MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
 
-  // 1. 啟動 TIM1 的 4 個 PWM 通道 (傳送給 L298N 的 ENA/ENB 控制速度)
+  /* USER CODE BEGIN 2 */
+  // 啟動 TIM1 的 4 個 PWM 通道控制馬達速度
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
-  // 2. 啟動 4 個輪子的硬體編碼器模式
-  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // 左前輪
-  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL); // 右前輪
-  HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL); // 左後輪
-  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL); // 右後輪
-
+  // 啟動 4 個輪子的硬體編碼器模式
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      // 讀取 4 顆輪子編碼器的當前累積脈衝數值
-      int32_t count_FL = __HAL_TIM_GET_COUNTER(&htim2); // 左前
-      int32_t count_FR = __HAL_TIM_GET_COUNTER(&htim5); // 右前
-      int32_t count_RL = __HAL_TIM_GET_COUNTER(&htim4); // 左後
-      int32_t count_RR = __HAL_TIM_GET_COUNTER(&htim3); // 右後
+      // 讀取編碼器數值以確保計數正常運作 (防呆讀取)
+      __HAL_TIM_GET_COUNTER(&htim2);
+      __HAL_TIM_GET_COUNTER(&htim5);
+      __HAL_TIM_GET_COUNTER(&htim4);
+      __HAL_TIM_GET_COUNTER(&htim3);
 
-      // (在此處可加入你的循跡、避障邏輯，或是讀取 Encoder 進行速度控制)
-
-      HAL_Delay(10); // 避免主迴圈跑太快
+      HAL_Delay(10);
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -177,7 +145,7 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief TIM1 Initialization Function (馬達 PWM)
+  * @brief TIM1 Initialization Function
   */
 static void MX_TIM1_Init(void)
 {
@@ -196,9 +164,11 @@ static void MX_TIM1_Init(void)
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK) Error_Handler();
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK) Error_Handler();
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK) Error_Handler();
+
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
@@ -214,7 +184,7 @@ static void MX_TIM1_Init(void)
 }
 
 /**
-  * @brief TIM2 Initialization Function (編碼器)
+  * @brief TIM2 Initialization Function
   */
 static void MX_TIM2_Init(void)
 {
@@ -237,13 +207,14 @@ static void MX_TIM2_Init(void)
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK) Error_Handler();
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK) Error_Handler();
 }
 
 /**
-  * @brief TIM3 Initialization Function (編碼器)
+  * @brief TIM3 Initialization Function
   */
 static void MX_TIM3_Init(void)
 {
@@ -266,13 +237,14 @@ static void MX_TIM3_Init(void)
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK) Error_Handler();
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK) Error_Handler();
 }
 
 /**
-  * @brief TIM4 Initialization Function (編碼器)
+  * @brief TIM4 Initialization Function
   */
 static void MX_TIM4_Init(void)
 {
@@ -295,4 +267,92 @@ static void MX_TIM4_Init(void)
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim4, &sConfig) != HAL_OK) Error_Handler();
-  sMasterConfig
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK) Error_Handler();
+}
+
+/**
+  * @brief TIM5 Initialization Function
+  */
+static void MX_TIM5_Init(void)
+{
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 0;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 65535;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim5, &sConfig) != HAL_OK) Error_Handler();
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK) Error_Handler();
+}
+
+/**
+  * @brief GPIO Initialization Function
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, IN1_PIN_Pin|IN2_PIN_Pin|IN3_PIN_Pin|IN4_PIN_Pin
+                          |IN5_PIN_Pin|IN6_PIN_Pin|Trig_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, IN7_PIN_Pin|IN8_PIN_Pin, GPIO_PIN_RESET);
+
+  GPIO_InitStruct.Pin = IN1_PIN_Pin|IN2_PIN_Pin|IN3_PIN_Pin|IN4_PIN_Pin
+                          |IN5_PIN_Pin|IN6_PIN_Pin|Trig_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = Echo_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Echo_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = IN7_PIN_Pin|IN8_PIN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  __disable_irq();
+  while (1)
+  {
+  }
+}
+
+#ifdef USE_FULL_ASSERT
+void assert_failed(uint8_t *file, uint32_t line)
+{
+}
+#endif /* USE_FULL_ASSERT */
