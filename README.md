@@ -33,19 +33,21 @@
 
 ---
 
+
 ## 📂 專案軟體架構 (Project Structure)
 
 本專案採用模組化分層設計，將底層硬體驅動與主決策邏輯分離：
 
-
+```text
 STM32-Autonomous-Navigation-Robot/
 ├── Core/
 │   ├── Inc/
-│   │   ├── main.h          # 全域腳位與系統巨集定義[cite: 3]
-│   │   ├── motor.h         # 馬達與麥克納姆輪運動函式宣告[cite: 2]
-│   │   └── sensor.h        # 循跡與超音波感測器函式宣告[cite: 2]
+│   │   ├── main.h          # 全域腳位與系統巨集定義
+│   │   ├── motor.h         # 馬達與麥克納姆輪運動函式宣告
+│   │   └── sensor.h        # 循跡與超音波感測器函式宣告
 │   └── Src/
 │       ├── main.c          # 系統初始化、編碼器讀取與主控制決策迴圈
-│       ├── motor.c         # L298N 底層驅動與全向運動學實作（前進、轉向、左右平移）[cite: 2]
-│       └── sensor.c        # TCRT5000 狀態讀取與 HC-SR04 距離演算法[cite: 2]
+│       ├── motor.c         # L298N 底層驅動與全向運動學實作（前進、轉向、左右平移）
+│       └── sensor.c        # TCRT5000 狀態讀取與 HC-SR04 距離演算法
 └── STM32-Autonomous-Navigation-Robot.ioc  # STM32CubeMX 硬體周邊配置檔
+
